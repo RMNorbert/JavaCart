@@ -13,3 +13,7 @@
 
 ---
 # Microservices
+Microservices is a project designed for building and managing microservices that power a webshop ecosystem.
+
+Developed with Java and Spring Boot, this platform integrates Eureka for service discovery, Keycloak for secure authentication, Kafka for efficient event-driven communication, and both MySQL and MongoDB for flexible data storage. It offers a unified solution for creating, scaling, and orchestrating microservices in a webshop environment. With a focus on reliability and scalability, this application is tailored for building and experimenting with webshop microservices architectures.
+
