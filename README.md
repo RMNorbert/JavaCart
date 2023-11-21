@@ -4,7 +4,6 @@
 [![Spring Boot](https://img.shields.io/badge/-Spring%20Boot-333333.svg?logo=spring&labelColor=black&style=for-the-badge)](https://spring.io/projects/spring-boot)
 [![Eureka](https://img.shields.io/badge/Eureka-333333.svg?logo=spring&logoColor=4d6b53&labelColor=black&style=for-the-badge)](https://spring.io/projects/spring-cloud-netflix)
 [![Hibernate](https://img.shields.io/badge/Hibernate-333333.svg?logo=Hibernate&logoColor=4d6b53&labelColor=black&style=for-the-badge)](https://hibernate.org/)
-[![Hibernate](https://img.shields.io/badge/Hibernate-333333.svg?logo=Hibernate&logoColor=4d6b53&labelColor=black&style=for-the-badge)](https://hibernate.org/)
 
 [![Keycloak](https://img.shields.io/badge/keycloak-333333.svg?logo=keycloak&logoColor=4d6b53&labelColor=black&style=for-the-badge)](https://www.keycloak.org/)
 [![Kafka](https://img.shields.io/badge/Kafka-333333.svg?logo=apachekafka&logoColor=4d6b53&labelColor=black&style=for-the-badge)](https://kafka.apache.org/)
@@ -40,12 +39,18 @@ Developed with Java and Spring Boot, this platform integrates Eureka for service
 git@github.com:RMNorbert/Microservices.git
 ```
 
-#### 2.1 How to run the application using Docker (in progress)
+#### 2. Add environment variables for each module according to the application.properties files 
+
+  The files located in each module in 
+    
+    src/main/resources/
+
+#### 3.1 How to run the application using Docker (in progress)
 
     Run mvn clean package -DskipTests to build the applications and create the docker image locally.
     Run docker-compose up -d to start the applications.
 
-#### 2.2 How to run the application without Docker
+#### 3.2 How to run the application without Docker
 
     Run mvn clean verify -DskipTests by going inside each folder to build the applications.
     After that run mvn spring-boot:run by going inside each folder to start the applications.
