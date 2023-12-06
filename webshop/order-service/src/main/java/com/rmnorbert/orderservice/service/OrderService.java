@@ -3,12 +3,15 @@ package com.rmnorbert.orderservice.service;
 import com.rmnorbert.orderservice.dto.InventoryResponse;
 import com.rmnorbert.orderservice.dto.OrderRequest;
 import com.rmnorbert.orderservice.dto.OrderResponse;
+import com.rmnorbert.orderservice.dto.OrderedLineItemsDto;
+import com.rmnorbert.orderservice.event.OrderPlacedEvent;
 import com.rmnorbert.orderservice.model.Order;
 import com.rmnorbert.orderservice.model.OrderLineItems;
 import com.rmnorbert.orderservice.repository.OrderRepository;
-import io.micrometer.tracing.Span;
-import io.micrometer.tracing.Tracer;
+import io.micrometer.observation.ObservationRegistry;
+import io.micrometer.observation.Observation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -21,50 +24,51 @@ import java.util.UUID;
 @Transactional
 public class OrderService {
 
-    private  final OrderRepository orderRepository;
+    private final OrderRepository orderRepository;
     private final WebClient.Builder webClientBuilder;
-    private final Tracer tracer;
+    private final ObservationRegistry observationRegistry;
+    private final ApplicationEventPublisher applicationEventPublisher;
+
     public String placeOrder(OrderRequest orderRequest) {
-        List<OrderLineItems> orderLineItemsList = orderRequest
-                .orderLineItemsDtoList()
+        List<OrderLineItems> orderLineItems = orderRequest.orderLineItemsDtoList()
                 .stream()
-                .map(OrderLineItems::mapToEntityFrom)
+                .map(this::mapToDto)
                 .toList();
 
         Order order = Order.builder()
                 .orderNumber(UUID.randomUUID().toString())
-                .orderLineItemsList(orderLineItemsList)
+                .orderLineItemsList(orderLineItems)
                 .build();
 
-        List<String> skuCodes = order.getOrderLineItemsList()
-                .stream()
+        List<String> skuCodes = order.getOrderLineItemsList().stream()
                 .map(OrderLineItems::getSkuCode)
                 .toList();
 
-        Span inventoryServiceLookup = tracer.nextSpan().name("InventoryServiceLookUp");
-
-        try(Tracer.SpanInScope spanInScope = tracer.withSpan(inventoryServiceLookup.start())){
-            InventoryResponse[] inventoryResponsesArray = webClientBuilder.build().get()
+        // Call Inventory Service, and place order if product is in
+        // stock
+        Observation inventoryServiceObservation = Observation.createNotStarted("inventory-service-lookup",
+                this.observationRegistry);
+        inventoryServiceObservation.lowCardinalityKeyValue("call", "inventory-service");
+        return inventoryServiceObservation.observe(() -> {
+            InventoryResponse[] inventoryResponseArray = webClientBuilder.build().get()
                     .uri("http://inventory-service/api/inventory",
-                            uriBuilder ->
-                                    uriBuilder.queryParam("skuCode", skuCodes)
-                                            .build())
+                            uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes).build())
                     .retrieve()
                     .bodyToMono(InventoryResponse[].class)
                     .block();
 
-            boolean allProductsInStock = Arrays.stream(inventoryResponsesArray)
+            boolean allProductsInStock = Arrays.stream(inventoryResponseArray)
                     .allMatch(InventoryResponse::isInStock);
 
-            if(allProductsInStock) {
+            if (allProductsInStock) {
                 orderRepository.save(order);
-                return "Order placed successfully";
+                // publish Order Placed Event
+                applicationEventPublisher.publishEvent(new OrderPlacedEvent(this, order.getOrderNumber()));
+                return "Order Placed";
             } else {
-                throw new IllegalArgumentException("Product is not in stock. Please try again later.");
+                throw new IllegalArgumentException("Product is not in stock, please try again later");
             }
-        } finally {
-            inventoryServiceLookup.end();
-        }
+        });
     }
 
     public List<OrderResponse> getAllOrders() {
@@ -73,4 +77,13 @@ public class OrderService {
                 .map(OrderResponse::mapToOrderResponse)
                 .toList();
     }
+
+    private OrderLineItems mapToDto(OrderedLineItemsDto orderLineItemsDto) {
+        return OrderLineItems.builder()
+                .price(orderLineItemsDto.price())
+                .quantity(orderLineItemsDto.quantity())
+                .skuCode(orderLineItemsDto.skuCode())
+                .build();
+    }
+
 }
