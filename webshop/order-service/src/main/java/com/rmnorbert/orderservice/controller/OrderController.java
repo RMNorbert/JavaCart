@@ -22,7 +22,7 @@ public class OrderController {
     // With timeout the methods executed inside a new thread
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @CircuitBreaker(name = "inventory" , fallbackMethod = "fallback")
+    @CircuitBreaker(name = "inventory", fallbackMethod = "fallbackMethod")
     @TimeLimiter(name = "inventory")
     @Retry(name = "inventory")
     public CompletableFuture<String> placeOrder(@RequestBody OrderRequest orderRequest) {
@@ -31,10 +31,9 @@ public class OrderController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public List<OrderResponse>  getAllOrder() {
-            return orderService.getAllOrders();
+        return orderService.getAllOrders();
     }
-
-    public CompletableFuture<String> fallback(OrderRequest orderRequest, RuntimeException runtimeException) {
-        return CompletableFuture.supplyAsync(() -> "Something went wrong, please order after some time!");
+    public CompletableFuture<String> fallbackMethod(OrderRequest orderRequest, RuntimeException runtimeException) {
+        return CompletableFuture.supplyAsync(() -> "Oops! Something went wrong, please order after some time!");
     }
 }
