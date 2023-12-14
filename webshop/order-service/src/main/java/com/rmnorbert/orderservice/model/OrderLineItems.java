@@ -1,8 +1,10 @@
 package com.rmnorbert.orderservice.model;
 
-import com.rmnorbert.orderservice.dto.OrderedLineItemsDto;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
@@ -19,12 +21,4 @@ public class OrderLineItems {
     private String skuCode;
     private BigDecimal price;
     private Integer quantity;
-
-    public static OrderLineItems mapToEntityFrom(OrderedLineItemsDto orderedLineItemsDto) {
-        return OrderLineItems.builder()
-                .skuCode(orderedLineItemsDto.skuCode())
-                .price(orderedLineItemsDto.price())
-                .quantity(orderedLineItemsDto.quantity())
-                .build();
-    }
 }
