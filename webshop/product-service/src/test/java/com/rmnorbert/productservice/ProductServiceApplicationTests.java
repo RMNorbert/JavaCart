@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ProductServiceApplicationTests {
 	@Container
-	static MongoDBContainer mongoDBContainer = new MongoDBContainer("mongo:4.4.2");
+	private static final MongoDBContainer mongoDBContainer = new MongoDBContainer("mongo:4.4.2");
 
 	@Autowired
 	private MockMvc mockMvc;
